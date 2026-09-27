@@ -55,6 +55,81 @@ python -m venv --system-site-packages .venv
 pip install -e .
 ```
 
+## Application architecture
+
+Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
+
+Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
+
+Start local development in two terminals:
+
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+cd llm-inference-visualizer/frontend
+npm run dev
+```
+
+Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
+
+```bash
+cd llm-inference-visualizer/frontend
+npm run build
+cd ../..
+python -m uvicorn backend.app.main:app --port 8000
+```
+
+Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
+
+## Application architecture
+
+Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
+
+Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
+
+Start local development in two terminals:
+
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+cd llm-inference-visualizer/frontend
+npm run dev
+```
+
+Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
+
+```bash
+cd llm-inference-visualizer/frontend
+npm run build
+cd ../..
+python -m uvicorn backend.app.main:app --port 8000
+```
+
+Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
+
+## Application architecture
+
+Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
+
+Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
+
+Start local development in two terminals:
+
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+cd llm-inference-visualizer/frontend
+npm run dev
+```
+
+Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
+
+```bash
+cd llm-inference-visualizer/frontend
+npm run build
+cd ../..
+python -m uvicorn backend.app.main:app --port 8000
+```
+
+Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
+
 ---
 
 ## Command-Line Interface (CLI)

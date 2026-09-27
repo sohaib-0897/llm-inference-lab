@@ -50,3 +50,6 @@ Thumbs.db
 # IDE Files
 .vscode/
 .idea/
+
+# Local visual reference images are intentionally kept outside the repository.
+llm-inference-visualizer/refs/
