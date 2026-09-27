@@ -1,243 +1,262 @@
 # LLM Inference Lab
 
-A lightweight, high-performance experimentation and benchmarking laboratory for Large Language Model (LLM) inference optimization.
+A reproducible systems project for studying how large language model inference behaves under different execution strategies, model sizes, context lengths, output lengths, and serving conditions.
 
-Designed to profile, evaluate, and compare modern inference strategies including **Key-Value (KV) Caching**, **Grouped-Query Attention (GQA)**, **Rotary Positional Embeddings (RoPE)**, **Dynamic INT8 Quantization**, **Speculative Decoding**, and **ONNX Runtime Engine Acceleration**.
+The project combines:
 
----
+- a custom decoder-only transformer implementation
+- KV-cached vs full-prefix decoding
+- batching and context-length experiments
+- INT8 weight-only quantization
+- ONNX Runtime comparisons
+- speculative decoding mechanics
+- real-model inference through Ollama
+- local GPU serving measurements
+- an interactive benchmark visualizer
 
-## Key Features
+The goal is not to build another chat application.
 
-- **Modern Decoder-Only Causal Architecture**:
-  - Implements Root Mean Square Normalization ([`RMSNorm`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/models/transformer.py#L17)).
-  - Rotary Position Embeddings ([`apply_rotary_emb`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/models/attention.py#L32)) supporting dynamic sequence position offsets.
-  - Multi-Head and Grouped-Query Attention ([`GroupedQueryAttention`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/models/attention.py#L70)) for memory-efficient key/value representation.
-  - SwiGLU Feed-Forward Networks ([`SwiGLUFeedForward`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/models/transformer.py#L29)).
-- **Key-Value Caching Engine**:
-  - Layer-wise cache management ([`KVCache`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/engine/kv_cache.py#L48)) separating prefill prompt processing from cached incremental single-token decoding.
-  - Theoretical vs. empirical cache memory tracking.
-  - Full mathematical parity verification between cached and non-cached decoding.
-- **Inference Engines & Acceleration**:
-  - **PyTorch Native Engine**: Streaming and batch generation with configurable sampling (Greedy, Top-K, Top-P Nucleus, Temperature, Repetition Penalty).
-  - **ONNX Runtime Engine**: Export pipeline ([`export_to_onnx`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/engine/onnx_engine.py#L33)) and execution provider harness ([`ONNXInferenceEngine`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/engine/onnx_engine.py#L65)), demonstrating a **5.7x forward speedup** on CPU.
-- **Quantization Laboratory**:
-  - Symmetric per-channel INT8 weight quantization ([`QuantizedLinear`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/quantization/quantized_linear.py#L11)) achieving **2.46x parameter memory compression**.
-- **Speculative Decoding**:
-  - Draft-target model verification loop ([`SpeculativeDecoder`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/engine/speculative.py#L13)) based on Leviathan et al. (2023) tracking empirical draft acceptance rate.
-- **Benchmarking & Visualization**:
-  - Statistical profiling harness ([`BenchmarkRunner`](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/llm_lab/benchmarks/runner.py#L19)) exporting JSON, CSV, and visual performance graphs.
+The goal is to measure and understand what actually happens during inference.
 
 ---
 
-## Architecture Presets
+## What this project studies
 
-| Preset | Parameters | Hidden Dim (`d_model`) | Layers | Heads | KV Heads | Context Window |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`nano`** | 0.72M | 128 | 3 | 4 | 2 | 512 |
-| **`micro`** | 5.48M | 256 | 6 | 8 | 4 | 1,024 |
-| **`small`** | 26.75M | 512 | 8 | 16 | 4 | 2,048 |
+### Decoder performance
 
----
+The custom transformer implementation is used to examine:
 
-## Installation & Setup
+- incremental decoding
+- KV-cache reuse
+- full-prefix recomputation
+- token generation latency
+- throughput
+- batching behavior
+- output-length scaling
+- context-length scaling
 
-The project runs in a local user-space virtual environment (`.venv`) with zero external API requirements:
+### Memory and quantization
 
-```bash
-# Clone or navigate to the repository
-cd llm-inference-lab
+The project compares FP32 weights with a custom per-channel INT8 weight-only representation.
 
-# Create and activate local virtual environment
-python -m venv --system-site-packages .venv
-.venv\Scripts\activate   # On Windows PowerShell: .venv\Scripts\Activate.ps1
+Measured example:
 
-# Install development dependencies or run directly with existing packages
-pip install -e .
-```
+| Representation | Model size | Latency | Throughput |
+|---|---:|---:|---:|
+| FP32 | 2.82 MB | 115.25 ms | 277.65 tok/s |
+| INT8 | 1.14 MB | 186.05 ms | 171.99 tok/s |
 
-## Application architecture
+The INT8 representation reduced model footprint by approximately **2.46×**, but the measured CPU implementation was slower.
 
-Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
-
-Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
-
-Start local development in two terminals:
-
-```bash
-python -m uvicorn backend.app.main:app --reload --port 8000
-cd llm-inference-visualizer/frontend
-npm run dev
-```
-
-Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
-
-```bash
-cd llm-inference-visualizer/frontend
-npm run build
-cd ../..
-python -m uvicorn backend.app.main:app --port 8000
-```
-
-Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
-
-## Application architecture
-
-Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
-
-Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
-
-Start local development in two terminals:
-
-```bash
-python -m uvicorn backend.app.main:app --reload --port 8000
-cd llm-inference-visualizer/frontend
-npm run dev
-```
-
-Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
-
-```bash
-cd llm-inference-visualizer/frontend
-npm run build
-cd ../..
-python -m uvicorn backend.app.main:app --port 8000
-```
-
-Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
-
-## Application architecture
-
-Recorded portfolio mode reads committed benchmark artifacts through the existing sync script and static JSON bundle. It works without Python or a local Ollama service.
-
-Local lab mode adds a thin FastAPI layer over `llm_lab`; the browser calls `/api/*`, and only the API contacts Ollama. The existing Vite application is in `llm-inference-visualizer/frontend/`.
-
-Start local development in two terminals:
-
-```bash
-python -m uvicorn backend.app.main:app --reload --port 8000
-cd llm-inference-visualizer/frontend
-npm run dev
-```
-
-Open `http://localhost:5173`; Vite proxies `/api` to FastAPI. To run the built application through FastAPI:
-
-```bash
-cd llm-inference-visualizer/frontend
-npm run build
-cd ../..
-python -m uvicorn backend.app.main:app --port 8000
-```
-
-Then open `http://localhost:8000`. `npm run build` syncs the committed benchmark artifacts before bundling, preserving static deployment behavior.
+This is intentionally documented as a tradeoff rather than assuming quantization automatically improves latency.
 
 ---
 
-## Command-Line Interface (CLI)
+## KV caching
 
-The CLI tool `llm_lab.cli` provides subcommands for inspection, generation, benchmarking, and visualization:
+One of the main experiments compares cached incremental decoding with repeated full-prefix recomputation.
 
-### 1. Hardware & System Inspection
-Inspect CPU cores, RAM availability, CUDA status, and model architectural presets:
-```bash
-python -m llm_lab.cli info
-```
+| Strategy | Generation time | Throughput |
+|---|---:|---:|
+| KV-cached decoding | 107.71 ms | 297.10 tok/s |
+| Full recomputation | 219.29 ms | 145.93 tok/s |
 
-### 2. Interactive Token Generation
-Generate tokens with real-time streaming latency profiling (TTFT, TPOT, and throughput):
-```bash
-python -m llm_lab.cli generate --preset nano --prompt-len 16 --max-tokens 32
-```
-Options:
-- `--preset`: `nano`, `micro`, or `small`
-- `--no-cache`: Disables KV caching to test quadratic recomputation latency
-- `--sample`: Enables stochastic sampling (supports `--temperature`, `--top-k`, `--top-p`, `--repetition-penalty`)
+In this experiment, KV caching reduced measured generation time by approximately **2×**.
 
-### 3. Run Automated Benchmark Suite (From-Scratch Internals)
-Run the 5-suite comprehensive benchmark harness:
-```bash
-python -m llm_lab.cli benchmark --preset nano --warmup 1 --trials 3 --output-dir benchmarks/results
-```
-
-### 4. Generate Visual Charts (From-Scratch Internals)
-Export publication-ready comparison charts from existing results:
-```bash
-python -m llm_lab.cli plot --results-dir benchmarks/results
-```
-
-### 5. Inspect Local Ollama Models & GPU Memory Offload
-```bash
-python -m llm_lab.cli ollama-info
-```
-
-### 6. Interactive Generation with Real Pretrained Models (Ollama)
-```bash
-python -m llm_lab.cli ollama-gen --model qwen2.5:0.5b --max-tokens 48
-```
-
-### 7. Run Real-Model Benchmark Suite (Experiments A–E)
-```bash
-python -m llm_lab.cli ollama-bench --model qwen2.5:0.5b --output-dir benchmarks/results/ollama
-```
+The important distinction is that cached decoding reuses previously computed key/value states instead of repeatedly processing the entire prefix.
 
 ---
 
-## Real-Model Benchmarks with Ollama
+## ONNX Runtime
 
-While the custom PyTorch engine isolates low-level mechanisms (KV cache dynamics, GQA, RoPE, and INT8 compression) on CPU, the **Ollama Real-Model Benchmark Layer** evaluates production-grade pretrained LLMs running on actual local hardware with full GPU acceleration (NVIDIA RTX 4050 Laptop GPU, 6GB VRAM via Ollama's bundled CUDA runtime).
+The project also compares the custom PyTorch CPU path with ONNX Runtime for the same small-model workload.
 
-### Two Complementary Layers
+| Runtime | Mean latency |
+|---|---:|
+| PyTorch CPU | 7.24 ms |
+| ONNX Runtime | 1.27 ms |
 
-| Layer | Implementation | Focus & Capabilities |
-| :--- | :--- | :--- |
-| **From-Scratch Internals** | Custom PyTorch & ONNX | • Explicit KV cache tensor updates and memory tracking<br>• Mathematical equivalence validation (cached incremental decoding vs full-prefix recomputation)<br>• Speculative decoding draft/target verification loops<br>• Custom INT8 weight-only quantization<br>• PyTorch vs ONNX Runtime graph execution |
-| **Real Pretrained Serving** | Local Ollama Runtime | • Pretrained models (`qwen2.5:0.5b`, `qwen3:4b`)<br>• Full GPU VRAM offloading (100% GPU via llama-server)<br>• Realistic prompt prefill scaling up to 3,000 tokens<br>• Concurrent request serving & queue latency profiling<br>• Model size & throughput trade-offs |
+Measured speedup:
 
-### Strongest Measured Ollama Results
+**5.72×**
 
-Measured on **NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM)** with Ollama 0.34.4:
-
-| Benchmark Experiment | Model | Key Measurement | Observed Behavior |
-| :--- | :--- | :--- | :--- |
-| **Model Size Trade-off** | `qwen2.5:0.5b` vs `qwen3:4b` | **241.7 tok/s** vs **63.3 tok/s** | 3.82x throughput advantage for 0.5B; 4B requires 3.03 GB VRAM |
-| **Output Scaling** | `qwen2.5:0.5b` (16 to 128 tok) | **172.99 tok/s** → **245.20 tok/s** | Sustained high throughput during continuous token generation |
-| **Context Prefill Scaling** | `qwen2.5:0.5b` (223 to 2,979 tok) | Prompt Eval: **4.37 ms** → **5.06 ms** | GPU tensor cores process large prompt blocks with low prefill latency |
-| **Concurrency Scaling** | `qwen2.5:0.5b` (1 to 4 concurrent) | Aggregate: **187.7 tok/s** → **205.8 tok/s** | P95 latency scales from 77.4 ms to 279.1 ms as requests queue |
-
-Artifacts and charts:
-- Data exports: [benchmarks/results/ollama/](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/benchmarks/results/ollama/)
-- Visual plots: [context_scaling.png](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/benchmarks/results/ollama/context_scaling.png), [output_scaling.png](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/benchmarks/results/ollama/output_scaling.png), [model_comparison.png](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/benchmarks/results/ollama/model_comparison.png), [concurrency.png](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/benchmarks/results/ollama/concurrency.png)
+These numbers apply to the benchmark configuration in this repository and should not be interpreted as a universal PyTorch-vs-ONNX result.
 
 ---
 
-## Running Tests, Linting, & Type Checking
+# Real-model inference
 
-All verification tools run autonomously:
+Synthetic experiments are useful for understanding mechanics, but the project also includes measurements from real pretrained models served through Ollama.
 
-```bash
-# Run Complete Unit & Integration Test Suite (24/24 tests passing)
-pytest
+Tested models:
 
-# Code Formatting & Linting Check
-ruff check .
+- `qwen2.5:0.5b`
+- `qwen3:4b`
 
-# Static Type Checking
-mypy llm_lab tests
-```
+Both were run locally using Q4_K_M quantization.
+
+The machine reported full GPU processor allocation through Ollama during the measured runs.
 
 ---
 
-## Benchmark Results Summary
+## Local hardware
 
-### 1. From-Scratch Internals (Intel Core i5-13420H CPU)
-- **KV Cache Speedup**: At 64 generated tokens, KV caching yields **232.7 tok/s** compared to **193.8 tok/s** without cache, maintaining cached incremental decoding rather than full-prefix recomputation.
-- **Batch Scaling**: Increasing batch size from 1 to 4 scales aggregate throughput from **329.9 tok/s** to **1,181.7 tok/s** (3.58x parallel scaling).
-- **INT8 Quantization**: Reduces weight footprint from **2.82 MB** (FP32) to **1.14 MB** (INT8), yielding a **2.46x compression ratio**.
-- **ONNX Runtime Acceleration**: Single forward pass latency drops from **7.24 ms** (PyTorch native CPU) to **1.27 ms** (ONNX Runtime CPU), delivering a **5.7x forward speedup**.
+Real-model experiments were performed on:
 
-### 2. Real-Model Serving (NVIDIA RTX 4050 Laptop GPU via Ollama)
-- **Model Size Scaling**: `qwen2.5:0.5b` delivers **241.7 tok/s** decode speed vs **63.3 tok/s** for `qwen3:4b` (3.82x throughput advantage).
-- **Output Sustained Speed**: Generation throughput scales from **173.0 tok/s** (16 tokens) to **245.2 tok/s** (128 tokens).
-- **Prefill Scalability**: Evaluating 2,979 prompt tokens adds only ~0.69 ms of prompt eval time on GPU tensor cores.
-- **Concurrent Capacity**: Aggregate throughput peaks at **205.8 tok/s** under 4 concurrent requests.
+- **GPU:** NVIDIA GeForce RTX 4050 Laptop GPU
+- **VRAM:** 6141 MiB
+- **CPU:** Intel Core i5-13420H
+- **System RAM:** approximately 15.6 GB
+- **Ollama:** 0.34.4
 
-For full numerical breakdowns, latency percentiles, and hardware constraints, refer to [BENCHMARKS.md](file:///C:/Users/Sohaib/Desktop/llm-inference-lab/BENCHMARKS.md).
+Observed GPU residency:
+
+| Model | Approx. VRAM residency |
+|---|---:|
+| Qwen2.5 0.5B | 459.5 MiB |
+| Qwen3 4B | 3030.9 MiB |
+
+The larger model used roughly **6.6×** more observed VRAM.
+
+---
+
+# Real-model benchmark results
+
+## Qwen2.5 0.5B baseline
+
+Representative measurements:
+
+- TTFT: **27.72 ± 0.69 ms**
+- total latency: **251.43 ± 1.32 ms**
+- client-observed throughput: **226.96 ± 1.25 tok/s**
+- Ollama-reported decode throughput: **258.06 ± 0.42 tok/s**
+
+Client-observed timing and server-reported timing are kept separate throughout the benchmark outputs.
+
+---
+
+## Context-length scaling
+
+Prompt size was increased while generated output was held constant.
+
+Tested prompt lengths:
+
+- 223 tokens
+- 405 tokens
+- 769 tokens
+- 1497 tokens
+- 2979 tokens
+
+Observed prompt-evaluation times remained relatively small across most of the tested range, while TTFT increased for the largest context.
+
+The raw results are preserved in the benchmark artifacts rather than summarized only through charts.
+
+---
+
+## Output-length scaling
+
+Generated output was varied across:
+
+- 16 tokens
+- 32 tokens
+- 64 tokens
+- 128 tokens
+
+Observed server evaluation time increased approximately with generated sequence length.
+
+Representative server evaluation times:
+
+| Output tokens | Server evaluation |
+|---:|---:|
+| 16 | 57.03 ms |
+| 32 | 119.35 ms |
+| 64 | 243.03 ms |
+| 128 | 485.80 ms |
+
+This makes output length one of the clearest drivers of total generation time in the measured configuration.
+
+---
+
+## Model-size comparison
+
+With a 32-token output:
+
+| Metric | Qwen2.5 0.5B | Qwen3 4B |
+|---|---:|---:|
+| TTFT | 36.68 ms | 57.01 ms |
+| Server decode | 241.73 tok/s | 63.32 tok/s |
+| Total latency | 176.42 ms | 565.38 ms |
+| Observed VRAM | 459.5 MiB | 3030.9 MiB |
+
+In this benchmark, the smaller model produced tokens approximately **3.82× faster** during generation.
+
+This is a serving-performance comparison only. It is not a model-quality comparison.
+
+---
+
+# Concurrency
+
+The Ollama benchmark also measures multiple simultaneous requests.
+
+| Concurrency | Aggregate throughput | Mean latency | P95 latency |
+|---:|---:|---:|---:|
+| 1 | 187.72 tok/s | 77.38 ms | 77.38 ms |
+| 2 | 193.07 tok/s | 121.17 ms | 150.56 ms |
+| 4 | 205.77 tok/s | 191.59 ms | 279.07 ms |
+
+The measured result shows a classic serving tradeoff:
+
+aggregate throughput increased modestly while request latency, particularly tail latency, increased substantially.
+
+---
+
+# Architecture
+
+The repository contains two complementary benchmark paths.
+
+## 1. Custom inference engine
+
+Used for controlled systems experiments.
+
+Includes:
+
+- decoder-only transformer
+- rotary positional embeddings
+- grouped-query attention
+- RMSNorm
+- SwiGLU
+- KV caching
+- streaming generation
+- batching
+- speculative decoding mechanics
+- INT8 weight-only quantization
+- ONNX export/runtime path
+
+This path uses small custom models so individual inference mechanisms can be isolated and measured.
+
+## 2. Ollama real-model benchmarks
+
+Used for observing actual pretrained-model serving behavior.
+
+Measures:
+
+- TTFT
+- prompt evaluation
+- decode throughput
+- total latency
+- context-length scaling
+- output-length scaling
+- model-size differences
+- concurrency
+- observed GPU residency
+
+The two benchmark paths are reported separately because they measure different systems.
+
+---
+
+# Interactive visualizer
+
+The repository also includes a frontend under:
+
+```text
+frontend/
