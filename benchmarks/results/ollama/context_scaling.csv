@@ -1,0 +1,6 @@
+target_approx_tokens,actual_prompt_tokens,output_tokens,mean_prompt_eval_duration_ms,mean_client_ttft_ms,mean_total_latency_ms,mean_tokens_per_sec
+128,223,32,4.37,43.53,110.25,154.42
+256,405,32,4.45,26.47,96.97,185.64
+512,769,32,4.38,46.66,115.99,148.3
+1024,1497,32,4.42,37.93,111.59,161.5
+2048,2979,32,5.06,62.72,124.25,106.69

@@ -1,0 +1,28 @@
+[
+  {
+    "model_name": "qwen2.5:0.5b",
+    "param_size": "494.03M",
+    "quantization": "Q4_K_M",
+    "disk_size_mb": 379.4,
+    "vram_size_mb": 459.5,
+    "processor": "unknown",
+    "mean_ttft_ms": 36.68,
+    "mean_prompt_eval_ms": 4.6,
+    "mean_eval_tokens_per_sec": 241.73,
+    "mean_client_tokens_per_sec": 181.52,
+    "mean_total_latency_ms": 176.42
+  },
+  {
+    "model_name": "qwen3:4b",
+    "param_size": "4.0B",
+    "quantization": "Q4_K_M",
+    "disk_size_mb": 2381.6,
+    "vram_size_mb": 3030.9,
+    "processor": "unknown",
+    "mean_ttft_ms": 57.01,
+    "mean_prompt_eval_ms": 16.61,
+    "mean_eval_tokens_per_sec": 63.32,
+    "mean_client_tokens_per_sec": 56.62,
+    "mean_total_latency_ms": 565.38
+  }
+]

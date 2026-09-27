@@ -1,0 +1,5 @@
+requested_output_tokens,actual_output_tokens,mean_client_ttft_ms,mean_eval_duration_ms,mean_total_latency_ms,mean_tokens_per_sec
+16,16,35.14,57.03,94.02,172.99
+32,32,30.46,119.35,152.5,210.07
+64,64,41.87,243.03,288.08,222.21
+128,128,33.24,485.8,522.13,245.2
