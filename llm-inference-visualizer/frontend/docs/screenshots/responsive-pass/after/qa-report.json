@@ -1,0 +1,118 @@
+{
+  "mode": "after",
+  "responsive": [
+    {
+      "width": 390,
+      "height": 844,
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "width": 390,
+      "menuVisible": true,
+      "minMenuTouchTarget": 44,
+      "navigatedToKV": true,
+      "kvTouchTarget": 46,
+      "kvControlResponded": true,
+      "concurrencyTouchTarget": 52,
+      "concurrencyControlResponded": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "internals",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "A request enters the system."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "kv-cache",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Remember the prefix."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "real-model",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Now on hardware."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "comparison",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Two different masses."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "concurrency",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "More requests. More waiting."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "context-length",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Context takes up space."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "quantization",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Compress the weights."
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "id": "onnx",
+      "top": 0,
+      "scrollWidth": 390,
+      "heading": "Same graph. Faster path."
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "viewport": 430,
+      "document": 430
+    },
+    {
+      "width": 430,
+      "menuVisible": true,
+      "minMenuTouchTarget": 44,
+      "navigatedToKV": true,
+      "kvTouchTarget": 46,
+      "kvControlResponded": true,
+      "concurrencyTouchTarget": 52,
+      "concurrencyControlResponded": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "viewport": 768,
+      "document": 768
+    },
+    {
+      "width": 768,
+      "menuVisible": true,
+      "minMenuTouchTarget": 44,
+      "navigatedToKV": true,
+      "kvTouchTarget": 46,
+      "kvControlResponded": true,
+      "concurrencyTouchTarget": 48,
+      "concurrencyControlResponded": true
+    }
+  ],
+  "errors": []
+}

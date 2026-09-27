@@ -8,7 +8,6 @@ import benchmarkData from './data/benchmarks.generated.json'
 import type { BenchmarkBundle, ConcurrencyResult, ContextScaling, ModelComparison } from './data/types'
 import { useLenis } from './scroll/useLenis'
 import ScrollProgressPill from './components/ScrollProgressPill'
-import RuntimeStatus from './data/RuntimeStatus'
 import { loadLiveBenchmarks } from './data/api'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -36,7 +35,7 @@ function Atmosphere({ kind }: { kind: 'hero' | 'gpu' }) {
   useEffect(() => {
     const el = canvas.current
     const gl = el?.getContext('webgl', { alpha: true, antialias: false })
-    if (!el || !gl || reduce || window.innerWidth < 700) return
+    if (!el || !gl || reduce || window.innerWidth < 900) return
     const vertex = gl.createShader(gl.VERTEX_SHADER)!
     gl.shaderSource(vertex, 'attribute vec2 p; varying vec2 uv; void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}')
     gl.compileShader(vertex)
@@ -214,6 +213,14 @@ function Pipeline() {
           <div className="pipeline-baseline mono"><span>PARALLEL PREFILL</span><span>SEQUENTIAL DECODE</span></div>
         </div>
       </div>
+      <ol className="mobile-pipeline" aria-label="Prompt to output sequence">
+        <li><span>PROMPT</span><p>A request enters as text.</p></li>
+        <li><span>TOKENIZATION</span><p>Text becomes discrete token IDs.</p></li>
+        <li><span>ATTENTION</span><p>Each layer reads the context available so far.</p></li>
+        <li><span>KV CACHE</span><p>Earlier keys and values stay available for reuse.</p></li>
+        <li><span>DECODE</span><p>The model selects the next token.</p></li>
+        <li><span>OUTPUT</span><p>Generated tokens resolve back into text.</p></li>
+      </ol>
     </div>
   </section>
 }
@@ -308,12 +315,19 @@ function Onnx() {
 function Navigation() {
   const lenis = useLenis()
   const [active, setActive] = useState(sections[0][0])
+  const [mobileOpen, setMobileOpen] = useState(false)
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id) }), { rootMargin: '-42% 0px -46% 0px' })
     sections.forEach(([id]) => { const element = document.getElementById(id); if (element) observer.observe(element) })
     return () => observer.disconnect()
   }, [])
-  return <><nav className="nav-rail" aria-label="Story sections">{sections.map(([id, name]) => <button key={id} className={active === id ? 'active' : ''} aria-label={`Go to ${name}`} onClick={() => lenis?.scrollTo(`#${id}`, { offset: 0, duration: .85 })}><span className="nav-name">{name}</span><i/></button>)}</nav><div className="mobile-progress"><span>LLM INFERENCE LAB</span><b>{sections.find(([id]) => id === active)?.[1] ?? 'OVERVIEW'}</b></div></>
+  const activeIndex = Math.max(0, sections.findIndex(([id]) => id === active))
+  const goTo = (id: string) => {
+    if (lenis) lenis.scrollTo(`#${id}`, { offset: 0, duration: .85 })
+    else document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    setMobileOpen(false)
+  }
+  return <><nav className="nav-rail" aria-label="Story sections">{sections.map(([id, name]) => <button key={id} className={active === id ? 'active' : ''} aria-label={`Go to ${name}`} onClick={() => goTo(id)}><span className="nav-name">{name}</span><i/></button>)}</nav><div className={`mobile-navigation ${active === 'top' ? 'at-top' : ''}`}><button className="mobile-progress" aria-expanded={mobileOpen} aria-haspopup="menu" onClick={() => setMobileOpen((open) => !open)}><span className="mobile-progress-track"><i style={{ width: `${((activeIndex + 1) / sections.length) * 100}%` }}/></span><b>{sections[activeIndex][1]}</b><small>{activeIndex + 1}/{sections.length} <span aria-hidden="true">{mobileOpen ? '−' : '+'}</span></small></button>{mobileOpen && <nav className="mobile-section-menu" aria-label="Story sections" role="menu">{sections.map(([id, name], index) => <button key={id} role="menuitem" aria-current={active === id ? 'location' : undefined} onClick={() => goTo(id)}>{name}<span>{String(index + 1).padStart(2, '0')}</span></button>)}</nav>}</div></>
 }
 function Hero() {
   const openingRate = data.internals.find((entry) => entry.scenario === 'kv_cache_enabled' && entry.gen_len === 16)!.tokens_per_second
@@ -321,7 +335,6 @@ function Hero() {
   const model = data.modelComparison.find((entry) => entry.model_name === 'qwen2.5:0.5b')!.model_name
   const [springs, api] = useSpring(() => ({ x: 0, y: 0, config: { mass: 4, tension: 110, friction: 32 } }))
   return <section id="top" className="hero scene-hero" onPointerMove={(event) => { if (event.pointerType === 'touch' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; const rect = event.currentTarget.getBoundingClientRect(); api.start({ x: (event.clientX - rect.left - rect.width / 2) * .012, y: (event.clientY - rect.top - rect.height / 2) * .012 }) }} onPointerLeave={() => api.start({ x: 0, y: 0 })}>
-    <div className="hero-top"><span>LLM INFERENCE LAB</span><span>MODEL SYSTEMS / MEASURED LOCALLY</span></div>
     <div className="hero-layout">
       <motion.div className="hero-copy" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .28, ease: [.2, .8, .2, 1] }}>
         <span className="hero-overline">EXPERIMENTS IN MODEL INFERENCE</span>
@@ -352,5 +365,5 @@ export default function App() {
     })
     return () => { active = false }
   }, [])
-  return <><Navigation/><RuntimeStatus/><ScrollProgressPill/><div className="handoff-token" aria-hidden="true"><span>tₙ₊₁</span></div><main><Hero/><Pipeline/><KVCache/><Serving/><Comparison/><Concurrency/><ContextLength/><Quantization/><Onnx/></main><div className="motion-mode mono" aria-hidden="true">{reduce ? 'REDUCED MOTION' : 'SCROLL / SIGNAL'}</div></>
+  return <><Navigation/><ScrollProgressPill/><div className="handoff-token" aria-hidden="true"><span>tₙ₊₁</span></div><main><Hero/><Pipeline/><KVCache/><Serving/><Comparison/><Concurrency/><ContextLength/><Quantization/><Onnx/></main><div className="motion-mode mono" aria-hidden="true">{reduce ? 'REDUCED MOTION' : 'SCROLL / SIGNAL'}</div></>
 }
