@@ -1,0 +1,52 @@
+# Environments & Virtual Envs
+.venv/
+env/
+venv/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build & Packaging
+dist/
+build/
+*.egg-info/
+target/
+
+# Type Checking & Linting
+.mypy_cache/
+.ruff_cache/
+
+# Model Weights, Binary & Cache Artifacts
+*.onnx
+*.tmp
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.ckpt
+
+# Environment & Secrets
+.env
+.env.*
+*.env
+
+# Logs & System Files
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
