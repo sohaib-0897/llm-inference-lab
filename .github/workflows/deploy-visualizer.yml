@@ -1,0 +1,51 @@
+name: Deploy visualizer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "llm-inference-visualizer/frontend/**"
+      - "benchmarks/results/**"
+      - "BENCHMARKS.md"
+      - ".github/workflows/deploy-visualizer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: llm-inference-visualizer/frontend/package-lock.json
+      - uses: actions/configure-pages@v5
+      - run: npm ci
+        working-directory: llm-inference-visualizer/frontend
+      - run: npm run build
+        env:
+          VITE_BASE_PATH: /llm-inference-lab/
+        working-directory: llm-inference-visualizer/frontend
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: llm-inference-visualizer/frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
